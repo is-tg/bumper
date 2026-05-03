@@ -1,0 +1,6 @@
+name "bumper"
+description "automate bump workflow"
+authors "tg"
+copyright "Copyright © 2026, tg"
+license "BSL-1.0"
+targetPath "bin"
