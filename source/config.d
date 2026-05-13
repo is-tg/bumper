@@ -4,7 +4,7 @@ struct Config
 {
         struct Options
         {
-                string shell;
+                string shell = "bash";
         }
 
         struct Worker
