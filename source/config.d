@@ -58,7 +58,7 @@ struct Config
                 return output;
         }
 
-        private void populate(bool isConfig, char[][2] pair)
+        private void populate(bool isConfig, char[][2] pair, bool makeNewWorker = false)
         {
                 import std.file : exists;
                 import std.uni : icmp;
@@ -85,8 +85,11 @@ struct Config
                 }
                 else
                 {
-                        workers[workerId].jobs[cast(string) pair[0]] = executeCommand(pair[1]);
                         newWorker = true;
+                        if (makeNewWorker)
+                                return;
+
+                        workers[workerId].jobs[cast(string) pair[0]] = executeCommand(pair[1]);
                 }
         }
 
@@ -122,10 +125,18 @@ struct Config
                         }
                         else
                         {
-                                if (isValue && c == '\n')
+                                if (c == '\n' && isValue)
                                 {
-                                        pair[1] = content[startIndex .. i];
-                                        populate(isConfig, pair);
+                                        if (inWord)
+                                        {
+                                                pair[1] = content[startIndex .. i];
+                                                populate(isConfig, pair);
+                                        }
+                                        else
+                                        {
+                                                char[][2] emptyPair;
+                                                populate(false, emptyPair, true);
+                                        }
                                         inWord = isConfig = isValue = false;
                                 }
                                 else if (!isValue)
