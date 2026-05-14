@@ -89,6 +89,7 @@ struct Config
                         if (makeNewWorker)
                                 return;
 
+                        /* prolly have to work here for internal variables */
                         workers[workerId].jobs[cast(string) pair[0]] = executeCommand(pair[1]);
                 }
         }
