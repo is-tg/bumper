@@ -1,14 +1,24 @@
-import std.json : JSONValue;
-import hocon : patchJson;
+import std.getopt : getopt, defaultGetoptPrinter;
 
-void main()
+import worker : doWork;
+
+void main(string[] args)
 {
-        import std.file : write;
+        bool help;
+        string configFile = ".bumper";
 
-        /* Json source initialized when the time comes */
-        JSONValue json = JSONValue.emptyObject;
+        auto opts = getopt(
+                args,
+                "help|h", "Easy JSON patching", &help,
+                "config|c", "-c <file>, --config <file>\tpath to config file", &configFile,
+        );
 
-        patchJson(".bumper", json);
-
-        "draft.json".write(json.toPrettyString);
+        if (help)
+        {
+                defaultGetoptPrinter("bumper", opts.options);
+        }
+        else
+        {
+                doWork(configFile);
+        }
 }
