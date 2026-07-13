@@ -1,0 +1,40 @@
+colon1:value
+colon2: value
+colon3 : value
+
+# key and value must be in same line
+key          # skipped, no colon
+: value      # skipped, empty key
+emptyvalue:  # skipped
+:            # also skipped
+
+# key-value is split at first colon
+key!%&#@*($*@$&): isvalid :)
+imreallygenerous: urwelcum
+
+# substitutions can be made with ``
+two: 2
+one+one: 1+1=`two`
+lemon melon cookie recipe: secret
+canicook: `lemon melon cookie recipe`
+
+file : .bumper
+# there are some useful builtin functions
+hash: sha256 `file`
+size: bytes `file`
+
+# define the json to update with 'src'
+src : sample.json
+
+# fetch member value by writing path in rhs
+school name: `src.school_name`
+coolstudent: `src.students.2.name`
+
+# update by writing path in lhs
+src.students.1.grade.math: 100
+src.students.1.grade.physics: 100
+src.students.1.grade.chemistry: 100
+
+# create new members
+src.students.1.rival: `coolstudent`
+src.students.1.dream: escape `school name`

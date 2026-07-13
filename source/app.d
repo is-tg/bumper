@@ -1,24 +1,31 @@
 import std.getopt : getopt, defaultGetoptPrinter;
 
+import err : Failure, ExitCode;
 import worker : doWork;
 
-void main(string[] args)
+int main(string[] args)
 {
-        bool help;
         string configFile = ".bumper";
 
         auto opts = getopt(
                 args,
-                "help|h", "Easy JSON patching", &help,
-                "config|c", "-c <file>, --config <file>\tpath to config file", &configFile,
+                "config|c", "Pass path to config file", &configFile,
         );
 
-        if (help)
+        if (opts.helpWanted)
         {
-                defaultGetoptPrinter("bumper", opts.options);
+                defaultGetoptPrinter("Easy JSON patching.", opts.options);
         }
         else
         {
-                doWork(configFile);
+                try
+                        doWork(configFile);
+                catch (Failure f)
+                {
+                        f.report();
+                        return cast(int) f.code;
+                }
         }
+
+        return ExitCode.SUCCESS;
 }

@@ -1,29 +1,35 @@
-enum
+import std.conv : to;
+import std.format : format;
+import std.stdio : stderr;
+
+enum ExitCode
 {
-	ESUCCESS, /* Successful exit status */
-	ENOARG, /* No arguments passed */
-	ENOENT, /* No such entity */
-	EBADFILE, /* Bad file */
-	EINVARG, /* Invalid argument */
-	EPROGFAIL /* Program execution failed */
+	SUCCESS,
+	ENOFILE,
+	EBADFILE,
 }
 
 class Failure : Exception
 {
-	import std.format : format;
+	ExitCode code;
 
-	int exitCode;
-	this(Args...)(int code, string fmt, Args args)
+	private static enum RED = "\x1b[31m";
+	private static enum BOLD = "\x1b[1m";
+	private static enum RESET = "\x1b[0m";
+
+	this(Args...)(ExitCode code, string fmt, Args args)
 	{
 		super(format(fmt, args));
-		exitCode = code;
+		this.code = code;
 	}
 
-	static void print(Args...)(int code, string fmt, Args args)
+	void report() const
 	{
-		import std.stdio : stderr, writeln;
+		stderr.writeln(RED, BOLD, "ERROR[", to!string(code), "] ", RESET, msg);
+	}
 
-		stderr.writeln("ERROR ", format(fmt, args));
-		stderr.writeln("Process exited with code ", code);
+	static noreturn raise(Args...)(ExitCode code, string fmt, Args args)
+	{
+		throw new Failure(code, fmt, args);
 	}
 }

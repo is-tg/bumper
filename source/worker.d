@@ -1,9 +1,9 @@
-import std.typecons : tuple;
-
 void doWork(string configFile)
 {
 	import std.file : write;
-	import std.process : spawnProcess, wait;
+	import helper : ensureFileExists;
+
+	ensureFileExists(configFile, "Config file does not exist");
 
 	auto result = getUpdatedContent(configFile);
 	string jsonFile = result.jsonFile;
@@ -14,20 +14,15 @@ void doWork(string configFile)
 
 	scope (exit)
 	{
-		import std.file : remove;
 		import std.exception : collectException;
+		import std.file : remove;
 
 		collectException(remove(draftFile));
 	}
 
 	draftFile.write(updatedContent);
 
-	wait(spawnProcess([
-		"diff",
-		"--color=always",
-		jsonFile,
-		draftFile
-	]));
+	showDiff(jsonFile, draftFile);
 
 	if (promptOk())
 	{
@@ -35,9 +30,22 @@ void doWork(string configFile)
 	}
 }
 
+void showDiff(string originalFile, string updatedFile)
+{
+	import std.process : spawnProcess, wait;
+
+	wait(spawnProcess([
+		"diff",
+		"--color=always",
+		originalFile,
+		updatedFile,
+	]));
+}
+
 auto getUpdatedContent(string configFile)
 {
 	import std.json : JSONValue;
+	import std.typecons : tuple;
 	import patcher : patchJson;
 
 	auto json = JSONValue.emptyObject;

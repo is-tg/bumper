@@ -5,7 +5,7 @@ import parser;
 import functions;
 import json_utils;
 
-string resolveSubstitutions(string raw, Field[] store, JSONValue srcJson)
+string resolveSubstitutions(string rhs, Field[] store, JSONValue srcJson)
 {
 	import std.string : indexOf, startsWith;
 	import std.algorithm : find;
@@ -13,36 +13,37 @@ string resolveSubstitutions(string raw, Field[] store, JSONValue srcJson)
 	string result;
 	size_t i = 0;
 
-	while (i < raw.length)
+	while (i < rhs.length)
 	{
-		if (raw[i] == Config.substitution)
+		if (rhs[i] == Config.substitution)
 		{
 			/* Find closing backtick */
-			auto end = raw.indexOf(Config.substitution, i + 1);
+			auto end = rhs.indexOf(Config.substitution, i + 1);
 			if (end == -1)
 				break;
 
-			auto path = raw[i + 1 .. end];
+			auto sub = rhs[i + 1 .. end];
 
 			/* Check local fields first */
-			Field[] found = find!(f => f.key == path)(store);
+			Field[] found = find!(f => f.key == sub)(store);
 			if (found.length != 0)
 			{
 				result ~= found[0].value;
 			}
-			else
+			else if (sub.startsWith(Config.source))
 			{
-				if (path.startsWith(Config.source))
-					path = path[Config.source.length .. $];
-
-				result ~= getJsonValue(srcJson, path);
+				/* Strip source prefix */
+				auto key = sub[Config.source.length .. $];
+				/* Look up value in json source */
+				result ~= getJsonValue(srcJson, key);
 			}
 
-			i = end + 1; /* Skip past closing backtick */
+			/* Skip past closing backtick */
+			i = end + 1;
 		}
 		else
 		{
-			result ~= raw[i];
+			result ~= rhs[i];
 			i++;
 		}
 	}
@@ -55,19 +56,21 @@ string patchJson(string configFile, ref JSONValue json)
 {
 	import std.file : readText;
 	import std.string : startsWith;
+	import helper : ensureFileExists;
 
 	string srcFile;
 	Field[] fields = null;
 	auto rawFields = parseConfig(configFile);
 
-	/* Resolve substitutions then functions */
 	foreach (i, Field field; rawFields)
 	{
 		auto substituted = resolveSubstitutions(field.value, fields, json);
 		auto value = evalFunctions(substituted);
+		imported!"std.stdio".writeln(field.key, " : ", value);
 
 		if (field.key == Config.source[0 .. $ - 1])
 		{
+			ensureFileExists(value, "Config '" ~ Config.source[0 .. $ - 1] ~ "' references non-existent file");
 			srcFile = value;
 			json = parseJSON(value.readText, JSONOptions.preserveObjectOrder);
 		}

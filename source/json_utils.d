@@ -1,24 +1,17 @@
-import std.json : JSONValue, JSONType, parseJSON;
+import std.json : JSONValue;
 
 string getJsonValue(JSONValue json, string path)
 {
-	import std.string : split, isNumeric;
-	import std.conv : to;
+	import std.json : JSONType;
 
-	JSONValue current = json;
-	foreach (part; path.split("."))
-	{
-		if (part.isNumeric())
-			current = current[part.to!size_t];
-		else
-			current = current[part];
-	}
+	foreach (part; getParts(path))
+		json = *navigate(&json, part);
 
-	if (current.type == JSONType.string)
-		return current.str;
-
-	/* FIXME: Arrays/Objects will fail conversion */
-	return current.to!string;
+	/* Prevent including escaped quotes in strings */
+	if (json.type() == JSONType.string)
+		return json.str();
+	else
+		return json.toString();
 }
 
 /* Arrays and objects are not handled */
@@ -40,7 +33,9 @@ JSONValue inferJsonType(string raw)
 		import std.algorithm.searching : canFind;
 		import std.conv : to;
 
-		bool isFloat = raw.canFind('.') || raw.canFind('e') || raw.canFind('E');
+		bool isFloat = raw.canFind('.')
+			|| raw.canFind('e')
+			|| raw.canFind('E');
 		if (isFloat)
 			return JSONValue(raw.to!double);
 		else
@@ -50,45 +45,54 @@ JSONValue inferJsonType(string raw)
 	return JSONValue(raw);
 }
 
-/* Use opIndexAssign to update json which is a tuple array when preserving order */
 void setJsonValue(ref JSONValue json, string path, string value)
 {
-	import std.string : split, isNumeric;
+	import std.string : isNumeric;
 	import std.conv : to;
 
-	JSONValue* parent = &json;
-	string lastKey;
-	size_t lastIndex;
-	bool isLastNumeric = false;
+	auto parts = getParts(path);
+	auto current = &json;
 
-	auto parts = path.split(".");
-	JSONValue* current = &json;
+	foreach (part; parts[0 .. $ - 1])
+		current = navigate(current, part);
 
-	foreach (i, part; parts)
-	{
-		parent = current;
-		bool last = i + 1 == parts
-			.length;
-		isLastNumeric = part.isNumeric();
-
-		if (isLastNumeric)
-		{
-			lastIndex = part.to!size_t;
-			if (!last)
-				current = &(
-					*current)[lastIndex];
-		}
-		else
-		{
-			lastKey = part;
-			if (!last)
-				current = &(*current)[lastKey];
-		}
-	}
-
+	auto last = parts[$ - 1];
 	auto finalValue = inferJsonType(value);
-	if (isLastNumeric)
-		(*parent)[lastIndex] = finalValue;
+
+	if (last.isNumeric())
+		(*current)[last.to!size_t] = finalValue;
 	else
-		(*parent)[lastKey] = finalValue;
+		(*current)[last] = finalValue;
+}
+
+string[] getParts(string path)
+{
+	import std.string : split;
+
+	return path.split('.');
+}
+
+JSONValue* navigate(JSONValue* current, string part)
+{
+	import std.json : JSONException;
+	import std.string : isNumeric;
+	import std.conv : to;
+
+	try
+	{
+		return part.isNumeric()
+			? &(*current)[part.to!size_t] /* Array index */
+			 : &(*current)[part]; /* Object index */
+	}
+	catch (JSONException e)
+	{
+		import err : Failure, ExitCode;
+
+		Failure.raise(
+			ExitCode.EBADFILE,
+			"Key \"%s\" not found in JSON object %s",
+			part,
+			*current
+		);
+	}
 }

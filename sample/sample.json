@@ -1,0 +1,33 @@
+{
+    "school_name": "Kuoh Academy",
+    "class": "Year 1",
+    "students": [
+        {
+            "id": "A1",
+            "name": "Ben",
+            "grade": {
+                "math": 80,
+                "physics": 69,
+                "chemistry": 91
+            }
+        },
+        {
+            "id": "A2",
+            "name": "Jim",
+            "grade": {
+                "math": 19,
+                "physics": 10,
+                "chemistry": 11
+            }
+        },
+        {
+            "id": "A3",
+            "name": "Kevin",
+            "grade": {
+                "math": 79,
+                "physics": 74,
+                "chemistry": 78
+            }
+        }
+    ]
+}
