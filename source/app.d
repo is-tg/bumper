@@ -1,54 +1,31 @@
-import config;
-import err;
-import jdad;
+import std.getopt : getopt, defaultGetoptPrinter;
 
-enum
-{
-        CONFIG_FILE = ".bumper",
-        DRAFT_FILE = "draft.json"
-}
+import err : Failure, ExitCode;
+import worker : doWork;
 
 int main(string[] args)
 {
-        try
+        string configFile = ".bumper";
+
+        auto opts = getopt(
+                args,
+                "config|c", "Pass path to config file", &configFile,
+        );
+
+        if (opts.helpWanted)
         {
-                if (args.length > 2)
-                {
-                        tryPrint(args[1 .. $]);
-                        return ESUCCESS;
-                }
-
-                auto config = Config(CONFIG_FILE);
-
-                foreach (worker; config.workers)
-                {
-                        foreach (source, destination; worker.positions)
-                        {
-                                auto doc = JsonFile(source);
-                                doc.assign(worker.jobs);
-                                doc.save(destination);
-                        }
-                }
+                defaultGetoptPrinter("Easy JSON patching.", opts.options);
         }
-        catch (Failure f)
-        {
-                Failure.print(f.exitCode, f.msg);
-                return f.exitCode;
-        }
-
-        return ESUCCESS;
-}
-
-void tryPrint(string[] arguments)
-{
-        import std.file : exists;
-        import std.uni : icmp;
-
-        if (!exists(arguments[0]))
-                throw new Failure(ENOENT, "File `%s` does not exist", arguments[0]);
-
-        if (icmp(arguments[1], "--print") == 0)
-                JsonFile(arguments[0]).print();
         else
-                throw new Failure(EINVARG, "Unrecognized argument `%s`", arguments[1]);
+        {
+                try
+                        doWork(configFile);
+                catch (Failure f)
+                {
+                        f.report();
+                        return cast(int) f.code;
+                }
+        }
+
+        return ExitCode.SUCCESS;
 }

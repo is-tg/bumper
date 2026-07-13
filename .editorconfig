@@ -1,7 +1,0 @@
-root = true
-
-[*]
-indent_size = 8
-tab_width = 8
-max_line_length = 144
-dfmt_soft_max_line_length = 144
