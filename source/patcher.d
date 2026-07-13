@@ -65,7 +65,7 @@ string patchJson(string configFile, ref JSONValue json)
 	foreach (i, Field field; rawFields)
 	{
 		auto substituted = resolveSubstitutions(field.value, fields, json);
-		auto value = evalFunctions(substituted);
+		auto value = tryEvalFunction(substituted);
 
 		if (field.key == Config.source[0 .. $ - 1])
 		{

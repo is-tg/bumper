@@ -26,7 +26,7 @@ string fileSize(string filename)
 	return filename.getSize.to!string;
 }
 
-string evalFunctions(string funcWithParams)
+string tryEvalFunction(string funcWithParams)
 {
 	import common : Config;
 	import std.string : startsWith, strip;
@@ -41,5 +41,6 @@ string evalFunctions(string funcWithParams)
 		auto param = funcWithParams[Config.size.length .. $].strip();
 		return fileSize(param);
 	}
+
 	return funcWithParams;
 }
