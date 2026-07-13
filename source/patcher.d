@@ -66,7 +66,6 @@ string patchJson(string configFile, ref JSONValue json)
 	{
 		auto substituted = resolveSubstitutions(field.value, fields, json);
 		auto value = evalFunctions(substituted);
-		imported!"std.stdio".writeln(field.key, " : ", value);
 
 		if (field.key == Config.source[0 .. $ - 1])
 		{
